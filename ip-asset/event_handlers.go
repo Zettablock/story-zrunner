@@ -40,12 +40,11 @@ func HandlerIPRegistered(log ethereum.Log, deps *utils.Deps) (bool, error) {
 		NftTokenURI:   uri,
 		NftImageURL:   "",
 	}
-	
 
 	if uri != "" {
 		response, err := http.Get(uri)
 		if err != nil {
-			deps.Logger.Error("Error fetching image from %s: %s", uri, err)
+			deps.Logger.Error("Error fetching image", "uri", uri, "error", err)
 			return false, err
 		}
 
@@ -53,7 +52,7 @@ func HandlerIPRegistered(log ethereum.Log, deps *utils.Deps) (bool, error) {
 			jsonResponse := make(map[string]interface{})
 			err := json.NewDecoder(response.Body).Decode(&jsonResponse)
 			if err != nil {
-				deps.Logger.Error("Error decoding response body: %v", err)
+				deps.Logger.Error("Error decoding response body", "error", err)
 				return false, err
 			}
 
