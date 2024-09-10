@@ -2,7 +2,5 @@ name: ip-asset  # required, no space or special chars allowed, must be consisten
 source:
   startBlock: 1167044
 eventHandlers: # multiple handlers
-  - event: Transfer
-    handler: HandleTransfer
-blockHandlers:
-  - handler: HandleBlock
+  - event: IPRegistered
+    handler: HandlerIPRegistered

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -9,6 +10,7 @@ import (
 
 	"github.com/Zettablock/zsource/dao/ethereum"
 	"github.com/Zettablock/zsource/utils"
+	"gorm.io/gorm"
 )
 
 func HandlerIPRegistered(log ethereum.Log, deps *utils.Deps) (bool, error) {
@@ -20,36 +22,30 @@ func HandlerIPRegistered(log ethereum.Log, deps *utils.Deps) (bool, error) {
 		return false, err
 	}
 
+	tokenContract := log.ArgumentValues[3]
+	uri := log.ArgumentValues[5]
+
 	ipAsset := &dao.IPAsset{
 		BlockNumber:   blockNumber,
 		BlockTime:     blockTime.Unix(),
 		ID:            log.ArgumentValues[0],
 		IPID:          log.ArgumentValues[1],
 		ChainID:       chainID,
-		TokenContract: log.ArgumentValues[3],
+		TokenContract: tokenContract,
 		Metadata:      nil,
 		ChildIPIDs:    nil,
 		ParentIPIDs:   nil,
 		RootIPIDs:     nil,
 		NftName:       log.ArgumentValues[4],
-		NftTokenURI:   log.ArgumentValues[5],
+		NftTokenURI:   uri,
 		NftImageURL:   "",
 	}
+	
 
-	// try:
-	//     if event.uri and len(event.uri) > 0:
-	//         response = requests.get(event.uri)
-	//         if response.status_code == 200:
-	//             json_response = response.json()
-	//             if "image" in json_response:
-	//                 ip_asset["nft_image_url"] = json_response["image"]
-	// except Exception as e:
-	//     logging.error(f"Error fetching image from {event.uri}: {e}")
-
-	if log.ArgumentValues[5] != "" {
-		response, err := http.Get(log.ArgumentValues[5])
+	if uri != "" {
+		response, err := http.Get(uri)
 		if err != nil {
-			deps.Logger.Error("Error fetching image from %s: %s", log.ArgumentValues[5], err)
+			deps.Logger.Error("Error fetching image from %s: %s", uri, err)
 			return false, err
 		}
 
@@ -57,7 +53,7 @@ func HandlerIPRegistered(log ethereum.Log, deps *utils.Deps) (bool, error) {
 			jsonResponse := make(map[string]interface{})
 			err := json.NewDecoder(response.Body).Decode(&jsonResponse)
 			if err != nil {
-				deps.Logger.Error("Error decoding response body: %s", err)
+				deps.Logger.Error("Error decoding response body: %v", err)
 				return false, err
 			}
 
@@ -71,5 +67,51 @@ func HandlerIPRegistered(log ethereum.Log, deps *utils.Deps) (bool, error) {
 		return false, err
 	}
 
-	
+	collection := &dao.Collection{}
+	if err := deps.DestinationDB.Where("id = ?", tokenContract).Take(collection).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, err
+	}
+	if collection.ID == "" {
+		collection = &dao.Collection{
+			ID:                    tokenContract,
+			AssetCount:            1,
+			RaisedDisputeCount:    0,
+			CancelledDisputeCount: 0,
+			ResolvedDisputeCount:  0,
+			JudgedDisputeCount:    0,
+			LicensesCount:         0,
+		}
+	} else {
+		collection.AssetCount++
+		collection.BlockNumber = blockNumber
+		collection.BlockTime = blockTime.Unix()
+	}
+	if err = deps.DestinationDB.Save(collection).Error; err != nil {
+		return false, err
+	}
+
+	txn := &ethereum.Transaction{}
+	if err = deps.SourceDB.Where("hash = ?", log.TransactionHash).Take(txn).Error; err != nil {
+		return false, err
+	}
+
+	daoTx := &dao.Transaction{
+		BlockNumber:      blockNumber,
+		BlockTime:        blockTime.Unix(),
+		ID:               log.TransactionHash,
+		TxHash:           log.TransactionHash,
+		TransactionIndex: log.TransactionIndex,
+		LogIndex:         log.LogIndex,
+		Initiator:        txn.FromAddress,
+		CreatedAt:        blockTime.Unix(),
+		ResourceID:       log.ContractAddress,
+		IPID:             log.ArgumentValues[1],
+		ActionType:       "Register",
+		ResourceType:     "IPAsset",
+	}
+
+	if err = deps.DestinationDB.Save(daoTx).Error; err != nil {
+		return false, err
+	}
+	return false, nil
 }
