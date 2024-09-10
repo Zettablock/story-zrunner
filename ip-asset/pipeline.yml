@@ -1,7 +1,8 @@
-name: ip-asset  # required, no space or special chars allowed, must be consistent with the pipeline folder name
+name: ip-asset # required, no space or special chars allowed, must be consistent with the pipeline folder name
 source:
   startBlock: 5768454
-  addresses: 0xd43fE0d865cb5C26b1351d3eAf2E3064BE3276F6
+  addresses:
+    - "0xd43fE0d865cb5C26b1351d3eAf2E3064BE3276F6"
 eventHandlers: # multiple handlers
   - event: IPRegistered
     handler: HandlerIPRegistered

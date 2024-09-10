@@ -4,4 +4,4 @@ kind: ethereum # chain name
 network: sepolia # chain network
 version: 1.0.0
 name: story-zrunner-demo # required, not space or special chars allowed, must be consistent with the project folder name
-githubRepo: "https://github.com/Zettablock/story-zrunner"
+githubRepo: "https://github.com/Zettablock/story-zrunner-demo"
