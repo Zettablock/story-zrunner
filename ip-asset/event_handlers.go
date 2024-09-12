@@ -14,6 +14,9 @@ import (
 )
 
 func HandlerIPRegistered(log ethereum.Log, deps *utils.Deps) (bool, error) {
+	// event signature
+	// IPRegistered (address ipId, index_topic_1 uint256 chainId, index_topic_2 address tokenContract, index_topic_3 uint256 tokenId, string name, string uri, uint256 registrationDate)
+
 	blockNumber := log.BlockNumber
 	blockTime := log.BlockTime
 
