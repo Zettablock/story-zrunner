@@ -17,21 +17,27 @@ func HandlerIPRegistered(log ethereum.Log, deps *utils.Deps) (bool, error) {
 	blockNumber := log.BlockNumber
 	blockTime := log.BlockTime
 
-	chainID, err := strconv.ParseInt(log.ArgumentValues[2], 0, 64)
+	chainID, err := strconv.ParseInt(log.ArgumentValues[1], 0, 64)
 	if err != nil {
 		return false, err
 	}
 
-	tokenContract := log.ArgumentValues[3]
+	tokenID, err := strconv.ParseInt(log.ArgumentValues[3], 0, 64)
+	if err != nil {
+		return false, err
+	}
+
+	tokenContract := log.ArgumentValues[2]
 	uri := log.ArgumentValues[5]
 
 	ipAsset := &dao.IPAsset{
 		BlockNumber:   blockNumber,
 		BlockTime:     blockTime.Unix(),
 		ID:            log.ArgumentValues[0],
-		IPID:          log.ArgumentValues[1],
+		IPID:          log.ArgumentValues[0],
 		ChainID:       chainID,
 		TokenContract: tokenContract,
+		TokenID:       tokenID,
 		Metadata:      nil,
 		ChildIPIDs:    nil,
 		ParentIPIDs:   nil,
