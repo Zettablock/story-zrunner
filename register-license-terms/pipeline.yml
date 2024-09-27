@@ -1,0 +1,13 @@
+name: register-license-terms # required, no space or special chars allowed, must be consistent with the pipeline folder name
+source:
+  startBlock: 5768461
+  addresses:
+    - "0x4f4b1bf7135C7ff1462826CCA81B048Ed19562ed"
+eventHandlers:
+  - event: LicenseTemplateRegistered
+    handler: HandleLicenseTemplateRegistered
+templates:
+  - name: LicenseTemplate
+    eventHandlers:
+      - event: LicenseTermsRegistered
+        handler: HandleLicenseTermsRegistered
